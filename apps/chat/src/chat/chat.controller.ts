@@ -24,12 +24,21 @@ export class ChatController {
     return this.chatService.createChatRoom(data);
   }
 
-  @EventPattern({
-    cmd : 'delete_chatroom_and_chats'
+  @MessagePattern({
+    cmd: 'delete_chatroom_and_chats',
   })
   @UsePipes(ValidationPipe)
   @UseInterceptors(RpcInterceptor)
-  deleteChatRoomAndChats(@Payload() data : DeleteChatroomAndChatsDto){
+  deleteChatRoomAndChats(@Payload() data: DeleteChatroomAndChatsDto) {
     return this.chatService.deleteChatroomAndChatsDto(data);
+  }
+
+  @MessagePattern({
+    cmd: 'delete_chatroom_by_couple_id',
+  })
+  @UsePipes(ValidationPipe)
+  @UseInterceptors(RpcInterceptor)
+  deleteChatRoomByCoupleId(@Payload() data: { coupleId: string }) {
+    return this.chatService.deleteChatroomByCoupleId(data.coupleId);
   }
 }

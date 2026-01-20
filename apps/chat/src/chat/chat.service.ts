@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ChatRoom } from './schema/chat-room.schema';
 import { CreateChatRoomDto } from './dto/create-chat-room.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -83,20 +82,54 @@ export class ChatService {
     const { coupleId, user1Id, user2Id } = dto;
     const userIds = [user1Id, user2Id];
 
+    try {
+      // 소켓 연결 해제 및 클라이언트 제거
+      userIds.forEach((userId) => {
+        const client = this.connectedClients.get(userId);
+        if (client) {
+          client.disconnect();
+          this.removeClient(userId);
+        }
+      });
 
-    // 소켓 연결 해제 및 클라이언트 제거
-    userIds.forEach((userId) => {
-      const client = this.connectedClients.get(userId);
-      if (client) {
-        client.disconnect();
-        this.removeClient(userId);
+      // DB 삭제 병렬 처리
+      await Promise.all([
+        this.chatroomModel.findOneAndDelete({ coupleId }),
+        this.chatModel.deleteMany({ userId: { $in: userIds } }),
+      ]);
+
+      return { status: 'success', message: 'ChatRoom 및 Chat 삭제 완료' };
+    } catch (error) {
+      return { status: 'error', message: error.message };
+    }
+  }
+
+  async deleteChatroomByCoupleId(coupleId: string) {
+    try {
+      const chatroom = await this.chatroomModel.findOne({ coupleId });
+
+      if (chatroom) {
+        const userIds = [chatroom.user1Id, chatroom.user2Id];
+
+        // 소켓 연결 해제 및 클라이언트 제거
+        userIds.forEach((userId) => {
+          const client = this.connectedClients.get(userId);
+          if (client) {
+            client.disconnect();
+            this.removeClient(userId);
+          }
+        });
+
+        // DB 삭제 병렬 처리
+        await Promise.all([
+          this.chatroomModel.findOneAndDelete({ coupleId }),
+          this.chatModel.deleteMany({ chatRoomId: chatroom._id }),
+        ]);
       }
-    });
 
-    // DB 삭제 병렬 처리
-    await Promise.all([
-      this.chatroomModel.findByIdAndDelete(coupleId),
-      this.chatModel.deleteMany({ userId: { $in: userIds } }),
-    ]);
+      return { status: 'success' };
+    } catch (error) {
+      return { status: 'error', message: error.message };
+    }
   }
 }

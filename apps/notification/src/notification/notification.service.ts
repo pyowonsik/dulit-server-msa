@@ -1,6 +1,4 @@
-import { Controller, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { CreateCoupleNotificationDto } from './dto/create-couple-notification.dto';
 
@@ -20,30 +18,28 @@ export class NotificationService {
 
   /** 커플 매칭 알림 */
   async matchedNotification(dto: CreateCoupleNotificationDto) {
-    const client = this.connectedClients.get(dto.userId);
+    try {
+      const client = this.connectedClients.get(dto.userId);
 
-    if (client) {
-      // const notification = await this.notificationModel.create({
-      //   userId: dto.userId,
-      //   message: dto.isConnect
-      //     ? '커플이 연결 되었습니다.'
-      //     : '커플 연결이 해제 되었습니다.',
-      // });
+      if (client) {
+        client.emit(
+          'matchedNotification',
+          dto.isConnect
+            ? '커플이 연결 되었습니다.'
+            : '커플 연결이 해제 되었습니다.',
+        );
 
-      client.emit(
-        'matchedNotification',
-        dto.isConnect
-          ? '커플이 연결 되었습니다.'
-          : '커플 연결이 해제 되었습니다.',
-      );
-
-      /**  커플 해제시 소켓 close */
-      if (!dto.isConnect) {
-        // this.notificationModel.deleteMany({ userId : dto.userId }),
-        client.disconnect();
-        this.removeClient(dto.userId);
+        /** 커플 해제시 소켓 close */
+        if (!dto.isConnect) {
+          client.disconnect();
+          this.removeClient(dto.userId);
+        }
       }
-    } else {
+
+      // 연결된 클라이언트가 없어도 성공으로 처리
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   }
 }
