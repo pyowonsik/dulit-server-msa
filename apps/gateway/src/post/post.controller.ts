@@ -13,6 +13,7 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { UserPayloadDto } from '@app/common/dto';
 import { PostService } from './post.service';
 
@@ -23,11 +24,16 @@ import { UserPayload } from '../auth/decorator/user-payload.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { IsPostMineOrAdminGuard } from './guard/is-post-mine-or-admin.guard';
 
+@ApiTags('게시글')
+@ApiBearerAuth()
 @Controller('')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Post('/post')
+  @ApiOperation({ summary: '게시글 작성', description: '새로운 게시글을 작성합니다.' })
+  @ApiResponse({ status: 201, description: '게시글 작성 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async createPost(
     @UserPayload() userPayload: UserPayloadDto,
     @Body() createPostDto: CreatePostDto,
@@ -36,6 +42,9 @@ export class PostController {
   }
 
   @Get('/posts')
+  @ApiOperation({ summary: '게시글 목록 조회', description: '게시글 목록을 페이지네이션하여 조회합니다.' })
+  @ApiResponse({ status: 200, description: '게시글 목록 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async getPosts(
     @UserPayload() userPayload: UserPayloadDto,
     @Query() getPostsDto: GetPostsDto,
@@ -44,6 +53,10 @@ export class PostController {
   }
 
   @Get('/post/:postId')
+  @ApiOperation({ summary: '게시글 상세 조회', description: '특정 게시글의 상세 정보를 조회합니다.' })
+  @ApiParam({ name: 'postId', description: '게시글 ID' })
+  @ApiResponse({ status: 200, description: '게시글 조회 성공' })
+  @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   async getPost(
     @UserPayload() userPayload: UserPayloadDto,
     @Param('postId') postId: string,
@@ -53,6 +66,11 @@ export class PostController {
 
   @Patch('/post/:postId')
   @UseGuards(IsPostMineOrAdminGuard)
+  @ApiOperation({ summary: '게시글 수정', description: '게시글을 수정합니다. 본인 게시글만 수정 가능합니다.' })
+  @ApiParam({ name: 'postId', description: '게시글 ID' })
+  @ApiResponse({ status: 200, description: '게시글 수정 성공' })
+  @ApiResponse({ status: 403, description: '수정 권한 없음' })
+  @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   async updatePost(
     @UserPayload() userPayload: UserPayloadDto,
     @Body() updatePostDto: UpdatePostDto,
@@ -63,6 +81,11 @@ export class PostController {
 
   @Delete('/post/:postId')
   @UseGuards(IsPostMineOrAdminGuard)
+  @ApiOperation({ summary: '게시글 삭제', description: '게시글을 삭제합니다. 본인 게시글만 삭제 가능합니다.' })
+  @ApiParam({ name: 'postId', description: '게시글 ID' })
+  @ApiResponse({ status: 200, description: '게시글 삭제 성공' })
+  @ApiResponse({ status: 403, description: '삭제 권한 없음' })
+  @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   async deletePost(
     @UserPayload() userPayload: UserPayloadDto,
     @Param('postId') postId: string,
@@ -71,9 +94,24 @@ export class PostController {
   }
 
   @Post('/post/upload/files')
+  @ApiOperation({ summary: '게시글 파일 업로드', description: '게시글에 첨부할 이미지/영상 파일을 업로드합니다.' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: '업로드할 파일들 (최대 10개, 20MB 이하)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: '파일 업로드 성공' })
+  @ApiResponse({ status: 400, description: '지원하지 않는 파일 형식' })
   @UseInterceptors(
     FilesInterceptor('files', 10, {
-      // 파일 사이즈 제한
       limits: {
         fileSize: 20000000,
       },

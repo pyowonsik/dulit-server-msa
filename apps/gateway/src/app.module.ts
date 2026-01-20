@@ -21,6 +21,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { NotificationModule } from './notification/notification.module';
 import { PostModule } from './post/post.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -107,6 +108,7 @@ import { PostModule } from './post/post.module';
     CoupleModule,
     NotificationModule,
     PostModule,
+    HealthModule,
   ],
   providers: [
     {
@@ -127,6 +129,14 @@ export class AppModule implements NestModule {
         {
           path: 'auth/login',
           method: RequestMethod.POST,
+        },
+        {
+          path: 'health',
+          method: RequestMethod.GET,
+        },
+        {
+          path: 'health/ping',
+          method: RequestMethod.GET,
         },
       )
       .forRoutes('*');
