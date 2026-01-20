@@ -18,6 +18,9 @@ NestJS + MSA 기반 커플 전용 애플리케이션 백엔드 서버
 
 ![AWS 배포](./readme_source/msa-deploy.png)
 
+> **Note**: 인스턴스 비용으로 인해 현재 EC2 서버는 중지된 상태입니다.
+> 모놀리식 버전으로 배포된 서버는 [Dulit-server](https://github.com/pyowonsik/Dulit-server)에서 확인하실 수 있습니다.
+
 ## API 문서 (Swagger)
 
 ![Swagger](./readme_source/msa-swagger.png)
