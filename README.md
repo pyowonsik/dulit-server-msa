@@ -76,7 +76,7 @@ pnpm run start:dev notification
 
 ## 개발
 
-- **개발자**: 표원식 (1인 개발)
+- **개발자**: 표원식
 - **아키텍처**: Monolithic → MSA 마이그레이션
 
 ## 라이센스
